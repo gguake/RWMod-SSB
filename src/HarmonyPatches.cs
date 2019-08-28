@@ -20,26 +20,35 @@ namespace SimpleSearchBar
         {
             HarmonyInstance harmony = HarmonyInstance.Create(id: "rimworld.gguake.simplesearchbar.main");
 
+            // Draw search bar
+            harmony.Patch(original: AccessTools.Method(type: typeof(ThingFilterUI), name: "DoThingFilterConfigWindow"),
+                transpiler: new HarmonyMethod(type: typeof(HarmonyPatches), name: nameof(DoThingFilterConfigWindowTranspiler)));
+
+            harmony.Patch(original: AccessTools.Method(type: typeof(TransferableOneWayWidget), name: "FillMainRect"),
+                prefix: new HarmonyMethod(type: typeof(HarmonyPatches), name: nameof(DrawSearchBarTransfer)));
+
+            harmony.Patch(original: AccessTools.Method(type: typeof(Dialog_Trade), name: "DoWindowContents"),
+                transpiler: new HarmonyMethod(type: typeof(HarmonyPatches), name: nameof(Dialog_Trade_DoWindowContentsTranspiler)));
+
+            // visibility
             harmony.Patch(original: AccessTools.Method(type: typeof(Listing_TreeThingFilter), name: "Visible", parameters: new[] { typeof(ThingDef) }),
                 prefix: null, postfix: new HarmonyMethod(type: typeof(HarmonyPatches), name: nameof(VisiblePostfix)));
 
             harmony.Patch(original: AccessTools.Method(type: typeof(ThingFilter), name: "SetAllow", parameters: new[] { typeof(ThingDef), typeof(bool) }),
                 prefix: new HarmonyMethod(type: typeof(HarmonyPatches), name: nameof(SetAllowPrefix)));
-
-            harmony.Patch(original: AccessTools.Constructor(type: typeof(Dialog_BillConfig), parameters: new[] { typeof(Bill_Production), typeof(IntVec3) }),
-                postfix: new HarmonyMethod(type: typeof(HarmonyPatches), name: nameof(Dialog_BillConfigPostfix)));
-
-            harmony.Patch(original: AccessTools.Method(type: typeof(InspectPaneUtility), name: "ToggleTab"),
-                postfix: new HarmonyMethod(type: typeof(HarmonyPatches), name: nameof(ToggleTabPostfix)));
-
-            harmony.Patch(original: AccessTools.Method(type: typeof(TransferableOneWayWidget), name: "FillMainRect"),
-                prefix: new HarmonyMethod(type: typeof(HarmonyPatches), name: nameof(DrawSearchBarTransfer)));
-
-            harmony.Patch(original: AccessTools.Method(type: typeof(ThingFilterUI), name: "DoThingFilterConfigWindow"),
-                transpiler: new HarmonyMethod(type: typeof(HarmonyPatches), name: nameof(DoThingFilterConfigWindowTranspiler)));
             
             harmony.Patch(original: AccessTools.Method(type: typeof(TransferableOneWayWidget), name: "FillMainRect"),
                 transpiler: new HarmonyMethod(type: typeof(HarmonyPatches), name: nameof(FillMainRectTranspiler)));
+
+            harmony.Patch(original: AccessTools.Method(type: typeof(Dialog_Trade), name: "FillMainRect"),
+                transpiler: new HarmonyMethod(type: typeof(HarmonyPatches), name: nameof(Dialog_Trade_FillMainRectTranspiler)));
+
+            // reset keywords
+            harmony.Patch(original: AccessTools.Constructor(type: typeof(Dialog_BillConfig), parameters: new[] { typeof(Bill_Production), typeof(IntVec3) }),
+                postfix: new HarmonyMethod(type: typeof(HarmonyPatches), name: nameof(ResetKeyword)));
+
+            harmony.Patch(original: AccessTools.Method(type: typeof(InspectPaneUtility), name: "ToggleTab"),
+                postfix: new HarmonyMethod(type: typeof(HarmonyPatches), name: nameof(ResetKeyword)));
 
             harmony.Patch(original: AccessTools.Method(type: typeof(Dialog_LoadTransporters), name: "PostOpen"),
                 postfix: new HarmonyMethod(type: typeof(HarmonyPatches), name: nameof(ResetKeyword)));
@@ -58,6 +67,9 @@ namespace SimpleSearchBar
 
             harmony.Patch(original: AccessTools.Method(type: typeof(Dialog_LoadTransporters), name: "<DoWindowContents>m__1"),
                 postfix: new HarmonyMethod(type: typeof(HarmonyPatches), name: nameof(ResetKeyword)));
+
+            harmony.Patch(original: AccessTools.Method(type: typeof(Dialog_Trade), name: "PostOpen"),
+                postfix: new HarmonyMethod(type: typeof(HarmonyPatches), name: nameof(ResetKeyword)));
         }
 
         public static void DrawSearchBarFilterConfig(Rect rect, ThingFilter filter, ThingFilter parentFilter)
@@ -66,7 +78,13 @@ namespace SimpleSearchBar
             Text.Anchor = TextAnchor.MiddleLeft;
 
             Rect rtText = new Rect(rect.x + 1f, rect.yMax + 1f, rect.width - 1f, 27f);
-            SearchUtility.Keyword = Widgets.TextField(rtText, SearchUtility.Keyword);
+            SearchUtility.Keyword = Widgets.TextField(rtText.LeftPartPixels(rtText.width - 27f), SearchUtility.Keyword);
+
+            if (Widgets.ButtonText(rtText.RightPartPixels(27f), "X", true, true, true))
+            {
+                SearchUtility.Reset();
+                Event.current.Use();
+            }
 
             Text.Font = GameFont.Small;
             Text.Anchor = TextAnchor.UpperLeft;
@@ -78,12 +96,36 @@ namespace SimpleSearchBar
             Text.Anchor = TextAnchor.MiddleLeft;
 
             Rect rtText = new Rect(mainRect.width - 195f, 0f, 180f, 27f);
-            SearchUtility.Keyword = Widgets.TextField(rtText, SearchUtility.Keyword);
+            SearchUtility.Keyword = Widgets.TextField(rtText.LeftPartPixels(rtText.width - 27f), SearchUtility.Keyword);
+
+            if (Widgets.ButtonText(rtText.RightPartPixels(27f), "X", true, true, true))
+            {
+                SearchUtility.Reset();
+                Event.current.Use();
+            }
 
             Text.Font = GameFont.Small;
             Text.Anchor = TextAnchor.UpperLeft;
 
             return true;
+        }
+
+        public static void DrawSearchBarTrade(Rect inRect)
+        {
+            Text.Font = GameFont.Tiny;
+            Text.Anchor = TextAnchor.MiddleLeft;
+
+            Rect rtText = new Rect(12f, inRect.height - 49f, 200f, 27f);
+            SearchUtility.Keyword = Widgets.TextField(rtText.LeftPartPixels(rtText.width - 27f), SearchUtility.Keyword);
+
+            if (Widgets.ButtonText(rtText.RightPartPixels(27f), "X", true, true, true))
+            {
+                SearchUtility.Reset();
+                Event.current.Use();
+            }
+
+            Text.Font = GameFont.Small;
+            Text.Anchor = TextAnchor.UpperLeft;
         }
 
         public static void VisiblePostfix(ref bool __result, ThingDef td)
@@ -101,17 +143,7 @@ namespace SimpleSearchBar
         {
             return SearchUtility.CheckVisible(thingDef);
         }
-
-        public static void Dialog_BillConfigPostfix()
-        {
-            SearchUtility.Reset();
-        }
-
-        public static void ToggleTabPostfix()
-        {
-            SearchUtility.Reset();
-        }
-
+        
         public static void ResetKeyword()
         {
             SearchUtility.Reset();
@@ -158,6 +190,11 @@ namespace SimpleSearchBar
             }
         }
 
+        private static List<Tradeable> QueryTradable(List<Tradeable> cachedTradeables)
+        {
+            return cachedTradeables.Where(x => SearchUtility.CheckVisible(x)).ToList();
+        }
+
         public static IEnumerable<CodeInstruction> FillMainRectTranspiler(IEnumerable<CodeInstruction> instructions)
         {
             bool patch1 = false;
@@ -179,6 +216,47 @@ namespace SimpleSearchBar
                     }
                 }
                 
+                yield return instruction;
+            }
+        }
+
+        public static IEnumerable<CodeInstruction> Dialog_Trade_DoWindowContentsTranspiler(IEnumerable<CodeInstruction> instructions)
+        {
+            yield return new CodeInstruction(OpCodes.Ldarg_1);
+            yield return new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(HarmonyPatches), nameof(DrawSearchBarTrade)));
+
+            List<CodeInstruction> instructionList = instructions.ToList();
+            for (int i = 0; i < instructionList.Count; ++i)
+            {
+                CodeInstruction instruction = instructionList[i];
+                
+                yield return instruction;
+            }
+        }
+
+        private static List<CodeInstruction> __tempLocal = null;
+        public static IEnumerable<CodeInstruction> Dialog_Trade_FillMainRectTranspiler(IEnumerable<CodeInstruction> instructions)
+        {
+            var fieldCachedTradeables = AccessTools.Field(typeof(Dialog_Trade), "cachedTradeables");
+
+            yield return new CodeInstruction(OpCodes.Ldarg_0);
+            yield return new CodeInstruction(OpCodes.Ldfld, fieldCachedTradeables);
+            yield return new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(HarmonyPatches), nameof(QueryTradable)));
+            yield return new CodeInstruction(OpCodes.Stsfld, AccessTools.Field(typeof(HarmonyPatches), nameof(__tempLocal)));
+
+            List<CodeInstruction> instructionList = instructions.ToList();
+            for (int i = 0; i < instructionList.Count; ++i)
+            {
+                CodeInstruction instruction = instructionList[i];
+                if (i < instructionList.Count - 1 && 
+                    instructionList[i].opcode == OpCodes.Ldarg_0 &&
+                    instructionList[i + 1].opcode == OpCodes.Ldfld && instructionList[i + 1].operand == fieldCachedTradeables)
+                {
+                    yield return new CodeInstruction(OpCodes.Ldsfld, AccessTools.Field(typeof(HarmonyPatches), nameof(__tempLocal)));
+                    i++;
+                    continue;
+                }
+
                 yield return instruction;
             }
         }

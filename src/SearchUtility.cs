@@ -50,6 +50,16 @@ namespace SimpleSearchBar
             return true;
         }
 
+        public static bool CheckVisible(Tradeable tradable)
+        {
+            if (regulatedKeyword.Length > 0)
+            {
+                return RegulateString(tradable.LabelCap).Contains(regulatedKeyword);
+            }
+
+            return true;
+        }
+
         public static void Reset()
         {
             searchKeyword = string.Empty;
