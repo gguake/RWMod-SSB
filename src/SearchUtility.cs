@@ -40,7 +40,7 @@ namespace SimpleSearchBar
             return true;
         }
 
-        public static bool CheckVisible(Transferable transferable)
+        public static bool CheckVisible(TransferableOneWay transferable)
         {
             if (regulatedKeyword.Length > 0)
             {

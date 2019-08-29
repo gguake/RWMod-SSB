@@ -32,11 +32,12 @@ namespace SimpleSearchBar
 
             // visibility
             harmony.Patch(original: AccessTools.Method(type: typeof(Listing_TreeThingFilter), name: "Visible", parameters: new[] { typeof(ThingDef) }),
-                prefix: null, postfix: new HarmonyMethod(type: typeof(HarmonyPatches), name: nameof(VisiblePostfix)));
+                postfix: new HarmonyMethod(type: typeof(HarmonyPatches), name: nameof(VisiblePostfix)));
 
-            harmony.Patch(original: AccessTools.Method(type: typeof(ThingFilter), name: "SetAllow", parameters: new[] { typeof(ThingDef), typeof(bool) }),
-                prefix: new HarmonyMethod(type: typeof(HarmonyPatches), name: nameof(SetAllowPrefix)));
+            harmony.Patch(original: AccessTools.Method(type: typeof(Listing_TreeThingFilter), name: "DoCategory"),
+                transpiler: new HarmonyMethod(type: typeof(HarmonyPatches), name: nameof(DoCategoryTranspiler)));
             
+
             harmony.Patch(original: AccessTools.Method(type: typeof(TransferableOneWayWidget), name: "FillMainRect"),
                 transpiler: new HarmonyMethod(type: typeof(HarmonyPatches), name: nameof(FillMainRectTranspiler)));
 
@@ -45,6 +46,12 @@ namespace SimpleSearchBar
 
             // reset keywords
             harmony.Patch(original: AccessTools.Constructor(type: typeof(Dialog_BillConfig), parameters: new[] { typeof(Bill_Production), typeof(IntVec3) }),
+                postfix: new HarmonyMethod(type: typeof(HarmonyPatches), name: nameof(ResetKeyword)));
+
+            harmony.Patch(original: AccessTools.Constructor(type: typeof(Dialog_ManageOutfits), parameters: new[] { typeof(Outfit) }),
+                postfix: new HarmonyMethod(type: typeof(HarmonyPatches), name: nameof(ResetKeyword)));
+
+            harmony.Patch(original: AccessTools.Constructor(type: typeof(Dialog_ManageFoodRestrictions), parameters: new[] { typeof(FoodRestriction) }),
                 postfix: new HarmonyMethod(type: typeof(HarmonyPatches), name: nameof(ResetKeyword)));
 
             harmony.Patch(original: AccessTools.Method(type: typeof(InspectPaneUtility), name: "ToggleTab"),
@@ -70,6 +77,7 @@ namespace SimpleSearchBar
 
             harmony.Patch(original: AccessTools.Method(type: typeof(Dialog_Trade), name: "PostOpen"),
                 postfix: new HarmonyMethod(type: typeof(HarmonyPatches), name: nameof(ResetKeyword)));
+
         }
 
         public static void DrawSearchBarFilterConfig(Rect rect, ThingFilter filter, ThingFilter parentFilter)
@@ -79,7 +87,7 @@ namespace SimpleSearchBar
 
             Rect rtText = new Rect(rect.x + 1f, rect.yMax + 1f, rect.width - 1f, 27f);
             SearchUtility.Keyword = Widgets.TextField(rtText.LeftPartPixels(rtText.width - 27f), SearchUtility.Keyword);
-
+            
             if (Widgets.ButtonText(rtText.RightPartPixels(27f), "X", true, true, true))
             {
                 SearchUtility.Reset();
@@ -127,7 +135,7 @@ namespace SimpleSearchBar
             Text.Font = GameFont.Small;
             Text.Anchor = TextAnchor.UpperLeft;
         }
-
+        
         public static void VisiblePostfix(ref bool __result, ThingDef td)
         {
             if (__result)
@@ -139,11 +147,71 @@ namespace SimpleSearchBar
             }
         }
 
-        public static bool SetAllowPrefix(ThingFilter __instance, ThingDef thingDef)
+        private static FieldInfo fieldFilter = AccessTools.Field(typeof(Listing_TreeThingFilter), "filter");
+        private static FieldInfo fieldSettingsChangedCallback = AccessTools.Field(typeof(ThingFilter), "settingsChangedCallback");
+        private static void SetAllowInCategory(Listing_TreeThingFilter instance, TreeNode_ThingCategory node, bool allow, List<ThingDef> exceptedDefs, List<SpecialThingFilterDef> exceptedFilters)
         {
-            return SearchUtility.CheckVisible(thingDef);
+            ThingFilter filter = fieldFilter.GetValue(instance) as ThingFilter;
+            ThingCategoryDef categoryDef = node.catDef;
+            if (!ThingCategoryNodeDatabase.initialized)
+            {
+                Log.Error("SetAllow categories won't work before ThingCategoryDatabase is initialized.", false);
+            }
+
+            foreach (ThingDef thingDef in categoryDef.DescendantThingDefs)
+            {
+                if (exceptedDefs == null || !exceptedDefs.Contains(thingDef))
+                {
+                    if (SearchUtility.CheckVisible(thingDef))
+                    {
+                        filter.SetAllow(thingDef, allow);
+                    }
+                }
+            }
+            foreach (SpecialThingFilterDef specialThingFilterDef in categoryDef.DescendantSpecialThingFilterDefs)
+            {
+                if (exceptedFilters == null || !exceptedFilters.Contains(specialThingFilterDef))
+                {
+                    filter.SetAllow(specialThingFilterDef, allow);
+                }
+            }
+
+            Action settingsChangedCallback = fieldSettingsChangedCallback.GetValue(filter) as Action;
+            if ( settingsChangedCallback != null)
+            {
+                settingsChangedCallback();
+            }
         }
-        
+
+        public static IEnumerable<CodeInstruction> DoCategoryTranspiler(IEnumerable<CodeInstruction> instructions)
+        {
+            bool patch = false;
+            List<CodeInstruction> instructionList = instructions.ToList();
+            for (int i = 0; i < instructionList.Count; ++i)
+            {
+                CodeInstruction instruction = instructionList[i];
+                if (instruction.opcode == OpCodes.Beq && !patch)
+                {
+                    patch = true;
+                    yield return instruction;
+                    yield return new CodeInstruction(OpCodes.Ldarg_0);
+                    yield return new CodeInstruction(OpCodes.Ldarg_1);
+                    yield return new CodeInstruction(OpCodes.Ldloc_1);
+                    yield return new CodeInstruction(OpCodes.Ldc_I4_0);
+                    yield return new CodeInstruction(OpCodes.Ceq);
+                    yield return new CodeInstruction(OpCodes.Ldarg_0);
+                    yield return new CodeInstruction(OpCodes.Ldfld, AccessTools.Field(typeof(Listing_TreeThingFilter), "forceHiddenDefs"));
+                    yield return new CodeInstruction(OpCodes.Ldarg_0);
+                    yield return new CodeInstruction(OpCodes.Ldfld, AccessTools.Field(typeof(Listing_TreeThingFilter), "hiddenSpecialFilters"));
+                    yield return new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(HarmonyPatches), "SetAllowInCategory"));
+                    i += 12;
+                    continue;
+                }
+
+                yield return instruction;
+            }
+        }
+
         public static void ResetKeyword()
         {
             SearchUtility.Reset();
