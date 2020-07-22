@@ -32,32 +32,17 @@ namespace SimpleSearchBar
 
         public static bool CheckVisible(ThingDef thing)
         {
-            if (regulatedKeyword.Length > 0)
-            {
-                return RegulateString(thing.LabelCap).Contains(regulatedKeyword);
-            }
-
-            return true;
+            return SearchUtility.regulatedKeyword.Length <= 0 || SearchUtility.RegulateString(thing.LabelCap).Contains(SearchUtility.regulatedKeyword);
         }
 
         public static bool CheckVisible(TransferableOneWay transferable)
         {
-            if (regulatedKeyword.Length > 0)
-            {
-                return RegulateString(transferable.LabelCap).Contains(regulatedKeyword);
-            }
-
-            return true;
+            return SearchUtility.regulatedKeyword.Length <= 0 || SearchUtility.RegulateString(transferable.LabelCap).Contains(SearchUtility.regulatedKeyword);
         }
 
         public static bool CheckVisible(Tradeable tradable)
         {
-            if (regulatedKeyword.Length > 0)
-            {
-                return RegulateString(tradable.LabelCap).Contains(regulatedKeyword);
-            }
-
-            return true;
+            return SearchUtility.regulatedKeyword.Length <= 0 || SearchUtility.RegulateString(tradable.LabelCap).Contains(SearchUtility.regulatedKeyword);
         }
 
         public static void Reset()

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-using Harmony;
+using HarmonyLib;
 using RimWorld;
 using RimWorld.Planet;
 using Verse;
@@ -18,65 +18,85 @@ namespace SimpleSearchBar
     {
         static HarmonyPatches()
         {
-            HarmonyInstance harmony = HarmonyInstance.Create(id: "rimworld.gguake.simplesearchbar.main");
-
+            Harmony harmony = new Harmony(id: "rimworld.gguake.simplesearchbar.main");
+            
             // Draw search bar
-            harmony.Patch(original: AccessTools.Method(type: typeof(ThingFilterUI), name: "DoThingFilterConfigWindow"),
-                transpiler: new HarmonyMethod(type: typeof(HarmonyPatches), name: nameof(DoThingFilterConfigWindowTranspiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(ThingFilterUI), "DoThingFilterConfigWindow"),
+                transpiler: new HarmonyMethod(typeof(HarmonyPatches), nameof(DoThingFilterConfigWindowTranspiler)));
 
-            harmony.Patch(original: AccessTools.Method(type: typeof(TransferableOneWayWidget), name: "FillMainRect"),
-                prefix: new HarmonyMethod(type: typeof(HarmonyPatches), name: nameof(DrawSearchBarTransfer)));
+            harmony.Patch(original: AccessTools.Method(typeof(TransferableOneWayWidget), "FillMainRect"),
+                prefix: new HarmonyMethod(typeof(HarmonyPatches), nameof(DrawSearchBarTransfer)));
 
-            harmony.Patch(original: AccessTools.Method(type: typeof(Dialog_Trade), name: "DoWindowContents"),
-                transpiler: new HarmonyMethod(type: typeof(HarmonyPatches), name: nameof(Dialog_Trade_DoWindowContentsTranspiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(Dialog_Trade), "DoWindowContents"),
+                transpiler: new HarmonyMethod(typeof(HarmonyPatches), nameof(Dialog_Trade_DoWindowContentsTranspiler)));
 
             // visibility
-            harmony.Patch(original: AccessTools.Method(type: typeof(Listing_TreeThingFilter), name: "Visible", parameters: new[] { typeof(ThingDef) }),
-                postfix: new HarmonyMethod(type: typeof(HarmonyPatches), name: nameof(VisiblePostfix)));
+            harmony.Patch(original: AccessTools.Method(typeof(Listing_TreeThingFilter), "Visible", parameters: new[] { typeof(ThingDef) }),
+                postfix: new HarmonyMethod(typeof(HarmonyPatches), nameof(VisiblePostfix)));
 
-            harmony.Patch(original: AccessTools.Method(type: typeof(Listing_TreeThingFilter), name: "DoCategory"),
-                transpiler: new HarmonyMethod(type: typeof(HarmonyPatches), name: nameof(DoCategoryTranspiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(Listing_TreeThingFilter), "DoCategory"),
+                transpiler: new HarmonyMethod(typeof(HarmonyPatches), nameof(DoCategoryTranspiler)));
             
 
-            harmony.Patch(original: AccessTools.Method(type: typeof(TransferableOneWayWidget), name: "FillMainRect"),
-                transpiler: new HarmonyMethod(type: typeof(HarmonyPatches), name: nameof(FillMainRectTranspiler)));
+            harmony.Patch(original: AccessTools.Method(typeof(TransferableOneWayWidget), "FillMainRect"),
+                transpiler: new HarmonyMethod(typeof(HarmonyPatches), nameof(FillMainRectTranspiler)));
 
-            harmony.Patch(original: AccessTools.Method(type: typeof(Dialog_Trade), name: "FillMainRect"),
-                transpiler: new HarmonyMethod(type: typeof(HarmonyPatches), name: nameof(Dialog_Trade_FillMainRectTranspiler)));
-
+            harmony.Patch(original: AccessTools.Method(typeof(Dialog_Trade), "FillMainRect"),
+                transpiler: new HarmonyMethod(typeof(HarmonyPatches), nameof(Dialog_Trade_FillMainRectTranspiler)));
+            
             // reset keywords
-            harmony.Patch(original: AccessTools.Constructor(type: typeof(Dialog_BillConfig), parameters: new[] { typeof(Bill_Production), typeof(IntVec3) }),
-                postfix: new HarmonyMethod(type: typeof(HarmonyPatches), name: nameof(ResetKeyword)));
+            harmony.Patch(original: AccessTools.Constructor(typeof(Dialog_BillConfig), parameters: new[] { typeof(Bill_Production), typeof(IntVec3) }),
+                postfix: new HarmonyMethod(typeof(HarmonyPatches), nameof(ResetKeyword)));
 
-            harmony.Patch(original: AccessTools.Constructor(type: typeof(Dialog_ManageOutfits), parameters: new[] { typeof(Outfit) }),
-                postfix: new HarmonyMethod(type: typeof(HarmonyPatches), name: nameof(ResetKeyword)));
+            harmony.Patch(original: AccessTools.Constructor(typeof(Dialog_ManageOutfits), parameters: new[] { typeof(Outfit) }),
+                postfix: new HarmonyMethod(typeof(HarmonyPatches), nameof(ResetKeyword)));
 
-            harmony.Patch(original: AccessTools.Constructor(type: typeof(Dialog_ManageFoodRestrictions), parameters: new[] { typeof(FoodRestriction) }),
-                postfix: new HarmonyMethod(type: typeof(HarmonyPatches), name: nameof(ResetKeyword)));
+            harmony.Patch(original: AccessTools.Constructor(typeof(Dialog_ManageFoodRestrictions), parameters: new[] { typeof(FoodRestriction) }),
+                postfix: new HarmonyMethod(typeof(HarmonyPatches), nameof(ResetKeyword)));
 
-            harmony.Patch(original: AccessTools.Method(type: typeof(InspectPaneUtility), name: "ToggleTab"),
-                postfix: new HarmonyMethod(type: typeof(HarmonyPatches), name: nameof(ResetKeyword)));
+            harmony.Patch(original: AccessTools.Method(typeof(InspectPaneUtility), "ToggleTab"),
+                postfix: new HarmonyMethod(typeof(HarmonyPatches), nameof(ResetKeyword)));
 
-            harmony.Patch(original: AccessTools.Method(type: typeof(Dialog_LoadTransporters), name: "PostOpen"),
-                postfix: new HarmonyMethod(type: typeof(HarmonyPatches), name: nameof(ResetKeyword)));
+            harmony.Patch(original: AccessTools.Method(typeof(Dialog_LoadTransporters), "PostOpen"),
+                postfix: new HarmonyMethod(typeof(HarmonyPatches), nameof(ResetKeyword)));
 
-            harmony.Patch(original: AccessTools.Method(type: typeof(Dialog_FormCaravan), name: "PostOpen"),
-                postfix: new HarmonyMethod(type: typeof(HarmonyPatches), name: nameof(ResetKeyword)));
+            harmony.Patch(original: AccessTools.Method(typeof(Dialog_FormCaravan), "PostOpen"),
+                postfix: new HarmonyMethod(typeof(HarmonyPatches), nameof(ResetKeyword)));
             
-            harmony.Patch(original: AccessTools.Method(type: typeof(Dialog_FormCaravan), name: "<DoWindowContents>m__0"),
-                postfix: new HarmonyMethod(type: typeof(HarmonyPatches), name: nameof(ResetKeyword)));
+            if (AccessTools.Method(typeof(Dialog_FormCaravan), "<DoWindowContents>b__76_0") != null)
+            {
+                harmony.Patch(original: AccessTools.Method(typeof(Dialog_FormCaravan), "<DoWindowContents>b__76_0"),
+                    postfix: new HarmonyMethod(typeof(HarmonyPatches), nameof(ResetKeyword)));
 
-            harmony.Patch(original: AccessTools.Method(type: typeof(Dialog_FormCaravan), name: "<DoWindowContents>m__1"),
-                postfix: new HarmonyMethod(type: typeof(HarmonyPatches), name: nameof(ResetKeyword)));
+                harmony.Patch(original: AccessTools.Method(typeof(Dialog_FormCaravan), "<DoWindowContents>b__76_1"),
+                    postfix: new HarmonyMethod(typeof(HarmonyPatches), nameof(ResetKeyword)));
 
-            harmony.Patch(original: AccessTools.Method(type: typeof(Dialog_LoadTransporters), name: "<DoWindowContents>m__0"),
-                postfix: new HarmonyMethod(type: typeof(HarmonyPatches), name: nameof(ResetKeyword)));
+                harmony.Patch(original: AccessTools.Method(typeof(Dialog_LoadTransporters), "<DoWindowContents>b__62_0"),
+                    postfix: new HarmonyMethod(typeof(HarmonyPatches), nameof(ResetKeyword)));
 
-            harmony.Patch(original: AccessTools.Method(type: typeof(Dialog_LoadTransporters), name: "<DoWindowContents>m__1"),
-                postfix: new HarmonyMethod(type: typeof(HarmonyPatches), name: nameof(ResetKeyword)));
+                harmony.Patch(original: AccessTools.Method(typeof(Dialog_LoadTransporters), "<DoWindowContents>b__62_1"),
+                    postfix: new HarmonyMethod(typeof(HarmonyPatches), nameof(ResetKeyword)));
+            }
+            else
+            {
+                harmony.Patch(original: AccessTools.Method(typeof(Dialog_FormCaravan), "<DoWindowContents>b__81_0"),
+                    postfix: new HarmonyMethod(typeof(HarmonyPatches), nameof(ResetKeyword)));
 
-            harmony.Patch(original: AccessTools.Method(type: typeof(Dialog_Trade), name: "PostOpen"),
-                postfix: new HarmonyMethod(type: typeof(HarmonyPatches), name: nameof(ResetKeyword)));
+                harmony.Patch(original: AccessTools.Method(typeof(Dialog_FormCaravan), "<DoWindowContents>b__81_1"),
+                    postfix: new HarmonyMethod(typeof(HarmonyPatches), nameof(ResetKeyword)));
+
+                harmony.Patch(original: AccessTools.Method(typeof(Dialog_FormCaravan), "<DoWindowContents>b__81_2"),
+                    postfix: new HarmonyMethod(typeof(HarmonyPatches), nameof(ResetKeyword)));
+
+                harmony.Patch(original: AccessTools.Method(typeof(Dialog_LoadTransporters), "<DoWindowContents>b__62_0"),
+                    postfix: new HarmonyMethod(typeof(HarmonyPatches), nameof(ResetKeyword)));
+
+                harmony.Patch(original: AccessTools.Method(typeof(Dialog_LoadTransporters), "<DoWindowContents>b__62_1"),
+                    postfix: new HarmonyMethod(typeof(HarmonyPatches), nameof(ResetKeyword)));
+            }
+            
+            harmony.Patch(original: AccessTools.Method(typeof(Dialog_Trade), "PostOpen"),
+                postfix: new HarmonyMethod(typeof(HarmonyPatches), nameof(ResetKeyword)));
 
         }
 
@@ -138,12 +158,9 @@ namespace SimpleSearchBar
         
         public static void VisiblePostfix(ref bool __result, ThingDef td)
         {
-            if (__result)
+            if (__result && !string.IsNullOrEmpty(SearchUtility.Keyword) && !SearchUtility.CheckVisible(td))
             {
-                if (!string.IsNullOrEmpty(SearchUtility.Keyword) && !SearchUtility.CheckVisible(td))
-                {
-                    __result = false;
-                }
+                __result = false;
             }
         }
 
@@ -160,7 +177,7 @@ namespace SimpleSearchBar
 
             foreach (ThingDef thingDef in categoryDef.DescendantThingDefs)
             {
-                if (exceptedDefs == null || !exceptedDefs.Contains(thingDef))
+                if ((exceptedDefs == null || !exceptedDefs.Contains(thingDef)) && SearchUtility.CheckVisible(thingDef))
                 {
                     if (SearchUtility.CheckVisible(thingDef))
                     {
@@ -175,12 +192,8 @@ namespace SimpleSearchBar
                     filter.SetAllow(specialThingFilterDef, allow);
                 }
             }
-
-            Action settingsChangedCallback = fieldSettingsChangedCallback.GetValue(filter) as Action;
-            if ( settingsChangedCallback != null)
-            {
-                settingsChangedCallback();
-            }
+            
+            (fieldSettingsChangedCallback.GetValue(filter) as Action)?.Invoke();
         }
 
         public static IEnumerable<CodeInstruction> DoCategoryTranspiler(IEnumerable<CodeInstruction> instructions)
@@ -225,19 +238,19 @@ namespace SimpleSearchBar
             {
                 CodeInstruction instruction = instructionList[i];
                 if (instruction.opcode == OpCodes.Call &&
-                    instruction.operand == AccessTools.Property(type: typeof(ThingCategoryNodeDatabase), name: nameof(ThingCategoryNodeDatabase.RootNode)).GetGetMethod() &&
+                    instruction.operand == AccessTools.Property(typeof(ThingCategoryNodeDatabase), nameof(ThingCategoryNodeDatabase.RootNode)).GetGetMethod() &&
                     !patched)
                 {
                     yield return new CodeInstruction(OpCodes.Ldarga_S, 0);
                     yield return new CodeInstruction(OpCodes.Dup);
-                    yield return new CodeInstruction(OpCodes.Call, AccessTools.Property(type: typeof(Rect), name: nameof(Rect.yMax)).GetGetMethod());
+                    yield return new CodeInstruction(OpCodes.Call, AccessTools.Property(typeof(Rect), nameof(Rect.yMax)).GetGetMethod());
                     yield return new CodeInstruction(OpCodes.Ldc_R4, 28f);
                     yield return new CodeInstruction(OpCodes.Sub);
-                    yield return new CodeInstruction(OpCodes.Call, AccessTools.Property(type: typeof(Rect), name: nameof(Rect.yMax)).GetSetMethod());
+                    yield return new CodeInstruction(OpCodes.Call, AccessTools.Property(typeof(Rect), nameof(Rect.yMax)).GetSetMethod());
                     yield return new CodeInstruction(OpCodes.Ldarg_0);
                     yield return new CodeInstruction(OpCodes.Ldarg_2);
                     yield return new CodeInstruction(OpCodes.Ldarg_3);
-                    yield return new CodeInstruction(OpCodes.Call, AccessTools.Method(type: typeof(HarmonyPatches), name: nameof(HarmonyPatches.DrawSearchBarFilterConfig)));
+                    yield return new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(HarmonyPatches), nameof(HarmonyPatches.DrawSearchBarFilterConfig)));
 
                     patched = true;
                 }

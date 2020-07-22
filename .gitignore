@@ -1,6 +1,5 @@
 Thumbs.db
 ehthumbs.db
-/src/bin
-/src/obj
-/src/.vs/
-/About/PublishedFileId.txt
+/Source/bin
+/Source/obj
+/Source/.vs/
