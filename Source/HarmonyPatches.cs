@@ -62,38 +62,36 @@ namespace SimpleSearchBar
 
             harmony.Patch(original: AccessTools.Method(typeof(Dialog_FormCaravan), "PostOpen"),
                 postfix: new HarmonyMethod(typeof(HarmonyPatches), nameof(ResetKeyword)));
-            
-            if (AccessTools.Method(typeof(Dialog_FormCaravan), "<DoWindowContents>b__76_0") != null)
-            {
-                harmony.Patch(original: AccessTools.Method(typeof(Dialog_FormCaravan), "<DoWindowContents>b__76_0"),
-                    postfix: new HarmonyMethod(typeof(HarmonyPatches), nameof(ResetKeyword)));
 
-                harmony.Patch(original: AccessTools.Method(typeof(Dialog_FormCaravan), "<DoWindowContents>b__76_1"),
-                    postfix: new HarmonyMethod(typeof(HarmonyPatches), nameof(ResetKeyword)));
 
-                harmony.Patch(original: AccessTools.Method(typeof(Dialog_LoadTransporters), "<DoWindowContents>b__62_0"),
-                    postfix: new HarmonyMethod(typeof(HarmonyPatches), nameof(ResetKeyword)));
+#if (V11)
+            harmony.Patch(original: AccessTools.Method(typeof(Dialog_FormCaravan), "<DoWindowContents>b__76_0"),
+                postfix: new HarmonyMethod(typeof(HarmonyPatches), nameof(ResetKeyword)));
 
-                harmony.Patch(original: AccessTools.Method(typeof(Dialog_LoadTransporters), "<DoWindowContents>b__62_1"),
-                    postfix: new HarmonyMethod(typeof(HarmonyPatches), nameof(ResetKeyword)));
-            }
-            else
-            {
-                harmony.Patch(original: AccessTools.Method(typeof(Dialog_FormCaravan), "<DoWindowContents>b__81_0"),
-                    postfix: new HarmonyMethod(typeof(HarmonyPatches), nameof(ResetKeyword)));
+            harmony.Patch(original: AccessTools.Method(typeof(Dialog_FormCaravan), "<DoWindowContents>b__76_1"),
+                postfix: new HarmonyMethod(typeof(HarmonyPatches), nameof(ResetKeyword)));
 
-                harmony.Patch(original: AccessTools.Method(typeof(Dialog_FormCaravan), "<DoWindowContents>b__81_1"),
-                    postfix: new HarmonyMethod(typeof(HarmonyPatches), nameof(ResetKeyword)));
+            harmony.Patch(original: AccessTools.Method(typeof(Dialog_LoadTransporters), "<DoWindowContents>b__62_0"),
+                postfix: new HarmonyMethod(typeof(HarmonyPatches), nameof(ResetKeyword)));
 
-                harmony.Patch(original: AccessTools.Method(typeof(Dialog_FormCaravan), "<DoWindowContents>b__81_2"),
-                    postfix: new HarmonyMethod(typeof(HarmonyPatches), nameof(ResetKeyword)));
+            harmony.Patch(original: AccessTools.Method(typeof(Dialog_LoadTransporters), "<DoWindowContents>b__62_1"),
+                postfix: new HarmonyMethod(typeof(HarmonyPatches), nameof(ResetKeyword)));
+#else
+            harmony.Patch(original: AccessTools.Method(typeof(Dialog_FormCaravan), "<DoWindowContents>b__81_0"),
+                postfix: new HarmonyMethod(typeof(HarmonyPatches), nameof(ResetKeyword)));
 
-                harmony.Patch(original: AccessTools.Method(typeof(Dialog_LoadTransporters), "<DoWindowContents>b__62_0"),
-                    postfix: new HarmonyMethod(typeof(HarmonyPatches), nameof(ResetKeyword)));
+            harmony.Patch(original: AccessTools.Method(typeof(Dialog_FormCaravan), "<DoWindowContents>b__81_1"),
+                postfix: new HarmonyMethod(typeof(HarmonyPatches), nameof(ResetKeyword)));
 
-                harmony.Patch(original: AccessTools.Method(typeof(Dialog_LoadTransporters), "<DoWindowContents>b__62_1"),
-                    postfix: new HarmonyMethod(typeof(HarmonyPatches), nameof(ResetKeyword)));
-            }
+            harmony.Patch(original: AccessTools.Method(typeof(Dialog_FormCaravan), "<DoWindowContents>b__81_2"),
+                postfix: new HarmonyMethod(typeof(HarmonyPatches), nameof(ResetKeyword)));
+
+            harmony.Patch(original: AccessTools.Method(typeof(Dialog_LoadTransporters), "<DoWindowContents>b__62_0"),
+                postfix: new HarmonyMethod(typeof(HarmonyPatches), nameof(ResetKeyword)));
+
+            harmony.Patch(original: AccessTools.Method(typeof(Dialog_LoadTransporters), "<DoWindowContents>b__62_1"),
+                postfix: new HarmonyMethod(typeof(HarmonyPatches), nameof(ResetKeyword)));
+#endif
             
             harmony.Patch(original: AccessTools.Method(typeof(Dialog_Trade), "PostOpen"),
                 postfix: new HarmonyMethod(typeof(HarmonyPatches), nameof(ResetKeyword)));
