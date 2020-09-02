@@ -16,6 +16,8 @@ namespace SimpleSearchBar
     [StaticConstructorOnStartup]
     public class HarmonyPatches
     {
+        private static List<MethodInfo> DoWindowContents_Implicit_Methods = new List<MethodInfo>();
+
         static HarmonyPatches()
         {
             Harmony harmony = new Harmony(id: "rimworld.gguake.simplesearchbar.main");
@@ -63,36 +65,17 @@ namespace SimpleSearchBar
             harmony.Patch(original: AccessTools.Method(typeof(Dialog_FormCaravan), "PostOpen"),
                 postfix: new HarmonyMethod(typeof(HarmonyPatches), nameof(ResetKeyword)));
 
+            harmony.Patch(original: AccessTools.Method(typeof(Dialog_FormCaravan), "DoWindowContents"),
+                transpiler: new HarmonyMethod(typeof(HarmonyPatches), nameof(Dialog_FormCaravan_DoWindowContents_Transpiler)));
 
-#if (V11)
-            harmony.Patch(original: AccessTools.Method(typeof(Dialog_FormCaravan), "<DoWindowContents>b__76_0"),
-                postfix: new HarmonyMethod(typeof(HarmonyPatches), nameof(ResetKeyword)));
+            harmony.Patch(original: AccessTools.Method(typeof(Dialog_LoadTransporters), "DoWindowContents"),
+                transpiler: new HarmonyMethod(typeof(HarmonyPatches), nameof(Dialog_LoadTransporters_DoWindowContents_Transpiler)));
 
-            harmony.Patch(original: AccessTools.Method(typeof(Dialog_FormCaravan), "<DoWindowContents>b__76_1"),
-                postfix: new HarmonyMethod(typeof(HarmonyPatches), nameof(ResetKeyword)));
+            foreach (var method in DoWindowContents_Implicit_Methods)
+            {
+                harmony.Patch(original: method, postfix: new HarmonyMethod(typeof(HarmonyPatches), nameof(ResetKeyword)));
+            }
 
-            harmony.Patch(original: AccessTools.Method(typeof(Dialog_LoadTransporters), "<DoWindowContents>b__62_0"),
-                postfix: new HarmonyMethod(typeof(HarmonyPatches), nameof(ResetKeyword)));
-
-            harmony.Patch(original: AccessTools.Method(typeof(Dialog_LoadTransporters), "<DoWindowContents>b__62_1"),
-                postfix: new HarmonyMethod(typeof(HarmonyPatches), nameof(ResetKeyword)));
-#else
-            harmony.Patch(original: AccessTools.Method(typeof(Dialog_FormCaravan), "<DoWindowContents>b__81_0"),
-                postfix: new HarmonyMethod(typeof(HarmonyPatches), nameof(ResetKeyword)));
-
-            harmony.Patch(original: AccessTools.Method(typeof(Dialog_FormCaravan), "<DoWindowContents>b__81_1"),
-                postfix: new HarmonyMethod(typeof(HarmonyPatches), nameof(ResetKeyword)));
-
-            harmony.Patch(original: AccessTools.Method(typeof(Dialog_FormCaravan), "<DoWindowContents>b__81_2"),
-                postfix: new HarmonyMethod(typeof(HarmonyPatches), nameof(ResetKeyword)));
-
-            harmony.Patch(original: AccessTools.Method(typeof(Dialog_LoadTransporters), "<DoWindowContents>b__62_0"),
-                postfix: new HarmonyMethod(typeof(HarmonyPatches), nameof(ResetKeyword)));
-
-            harmony.Patch(original: AccessTools.Method(typeof(Dialog_LoadTransporters), "<DoWindowContents>b__62_1"),
-                postfix: new HarmonyMethod(typeof(HarmonyPatches), nameof(ResetKeyword)));
-#endif
-            
             harmony.Patch(original: AccessTools.Method(typeof(Dialog_Trade), "PostOpen"),
                 postfix: new HarmonyMethod(typeof(HarmonyPatches), nameof(ResetKeyword)));
 
@@ -223,6 +206,32 @@ namespace SimpleSearchBar
             }
         }
 
+        public static IEnumerable<CodeInstruction> Dialog_FormCaravan_DoWindowContents_Transpiler(IEnumerable<CodeInstruction> instructions)
+        {
+            foreach (var inst in instructions)
+            {
+                if (inst.opcode == OpCodes.Ldftn)
+                {
+                    DoWindowContents_Implicit_Methods.Add((MethodInfo)inst.operand);
+                }
+
+                yield return inst;
+            }
+        }
+
+        public static IEnumerable<CodeInstruction> Dialog_LoadTransporters_DoWindowContents_Transpiler(IEnumerable<CodeInstruction> instructions)
+        {
+            foreach (var inst in instructions)
+            {
+                if (inst.opcode == OpCodes.Ldftn)
+                {
+                    DoWindowContents_Implicit_Methods.Add((MethodInfo)inst.operand);
+                }
+
+                yield return inst;
+            }
+        }
+
         public static void ResetKeyword()
         {
             SearchUtility.Reset();
@@ -236,7 +245,7 @@ namespace SimpleSearchBar
             {
                 CodeInstruction instruction = instructionList[i];
                 if (instruction.opcode == OpCodes.Call &&
-                    instruction.operand == AccessTools.Property(typeof(ThingCategoryNodeDatabase), nameof(ThingCategoryNodeDatabase.RootNode)).GetGetMethod() &&
+                    (instruction.operand as MethodInfo) == AccessTools.Property(typeof(ThingCategoryNodeDatabase), nameof(ThingCategoryNodeDatabase.RootNode)).GetGetMethod() &&
                     !patched)
                 {
                     yield return new CodeInstruction(OpCodes.Ldarga_S, 0);
@@ -329,7 +338,7 @@ namespace SimpleSearchBar
                 CodeInstruction instruction = instructionList[i];
                 if (i < instructionList.Count - 1 && 
                     instructionList[i].opcode == OpCodes.Ldarg_0 &&
-                    instructionList[i + 1].opcode == OpCodes.Ldfld && instructionList[i + 1].operand == fieldCachedTradeables)
+                    instructionList[i + 1].opcode == OpCodes.Ldfld && (instructionList[i + 1].operand as FieldInfo) == fieldCachedTradeables)
                 {
                     yield return new CodeInstruction(OpCodes.Ldsfld, AccessTools.Field(typeof(HarmonyPatches), nameof(__tempLocal)));
                     i++;
