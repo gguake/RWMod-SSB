@@ -87,8 +87,17 @@ namespace SimpleSearchBar
             Text.Anchor = TextAnchor.MiddleLeft;
 
             Rect rtText = new Rect(rect.x + 1f, rect.yMax + 1f, rect.width - 1f, 27f);
-            SearchUtility.Keyword = Widgets.TextField(rtText.LeftPartPixels(rtText.width - 27f), SearchUtility.Keyword);
-            
+
+            GUI.SetNextControlName("RWSSB_SearchBar");
+            SearchUtility.Keyword = GUI.TextField(rtText.LeftPartPixels(rtText.width - 27f), SearchUtility.Keyword);
+
+            // KeyDown event used by windowstack so can't use it without dirty codes.
+            if (GUI.GetNameOfFocusedControl() == "RWSSB_SearchBar" && Event.current.keyCode == KeyBindingDefOf.Cancel.MainKey && Event.current.type == EventType.KeyUp)
+            {
+                GUI.FocusControl(null);
+                Event.current.Use();
+            }
+
             if (Widgets.ButtonText(rtText.RightPartPixels(27f), "X", true, true, true))
             {
                 SearchUtility.Reset();
